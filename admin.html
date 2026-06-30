@@ -96,6 +96,11 @@ watchAllOrders(orders=>{
         <span class="when">${fmtDate(o.createdAt)}</span>
       </div>
       <div class="order-items">${(o.items||[]).map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+      <div class="order-tags">
+        <span class="otag">${o.fulfilment==='deliver' ? '🚲 Bezorgen' : '🏫 Ophalen'}</span>
+        <span class="otag ${o.payment==='contant'?'otag-cash':'otag-paid'}">${o.paymentStatus || (o.payment==='contant'?'Onbetaald (contant)':'Betaald')}</span>
+      </div>
+      ${o.fulfilment==='deliver' && o.address ? `<div class="order-addr">📍 ${typeof o.address==='string'?o.address:''}</div>` : ''}
       <div class="order-bottom">
         <select class="status-select" data-id="${o.id}">
           ${STATUSES.map(s=>`<option ${s===(o.status||'Nieuw')?'selected':''}>${s}</option>`).join('')}

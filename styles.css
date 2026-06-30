@@ -291,6 +291,11 @@ footer a:hover{color:var(--ink)}
 .order-top .oid{font-family:var(--serif);font-size:1.05rem}
 .order-top .when{color:var(--muted);font-size:.82rem}
 .order-items{color:var(--muted);font-size:.9rem;margin-bottom:10px}
+.order-tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.otag{font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.otag-paid{color:#7fb89a;border-color:#7fb89a}
+.otag-cash{color:#d8b878;border-color:#d8b878}
+.order-addr{color:var(--muted);font-size:.85rem;margin-bottom:10px}
 .order-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .order .total{font-weight:700;font-family:var(--serif);font-size:1.1rem}
 .status-pill{font-size:.74rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 11px;border-radius:999px;border:1px solid var(--line)}

@@ -110,3 +110,50 @@ The in-browser preview blocks Firebase's scripts (sandbox restriction), so login
 won't work in the preview. **It works once deployed to Vercel** (or any normal
 host). Test accounts/dashboards on the live URL, not the preview.
 
+---
+
+# Bezorgen/ophalen, contant & betaling-bevestiging (webhook)
+
+The checkout now lets the customer choose:
+- **Ophalen op school** (gratis) or **Bezorgen** (+€3, with address).
+- **Online betalen** (Stripe) or **Contant bij ontvangst**.
+
+How orders get created:
+- **Contant:** the order is saved immediately with `paymentStatus: "Onbetaald
+  (contant)"` so staff know to collect cash. (Customer must be logged in.)
+- **Online:** the order is saved **only after Stripe confirms payment**, by a
+  webhook. This is the robust path — no payment, no order.
+
+## Webhook setup (one-time, ~10 min)
+This needs three Vercel Environment Variables and a Stripe webhook endpoint.
+
+1. **Firebase service account** (lets the server write orders securely):
+   - Firebase Console → Project settings → **Service accounts** → **Generate new
+     private key** → downloads a JSON file.
+   - In Vercel → Settings → Environment Variables, add `FIREBASE_SERVICE_ACCOUNT`
+     and paste the **entire JSON file contents** as the value. Mark it Sensitive.
+
+2. **Create the Stripe webhook:**
+   - Stripe Dashboard → Developers → **Webhooks** → **Add endpoint**.
+   - Endpoint URL: `https://YOUR-SITE/api/webhook`
+     (e.g. `https://freezy-drinks.vercel.app/api/webhook`).
+   - Events to send: **`checkout.session.completed`**.
+   - After creating it, copy the endpoint's **Signing secret** (`whsec_…`).
+
+3. **Add the webhook secret to Vercel:**
+   - `STRIPE_WEBHOOK_SECRET` = the `whsec_…` value. Mark it Sensitive.
+
+4. **Redeploy** so all env vars take effect.
+
+## Test it
+- Online: check out with card `4242 4242 4242 4242`. After paying you return to
+  the site, and the order appears in the dashboard + the customer's account with
+  status **Betaald**. (If it doesn't appear, check Stripe → Webhooks → your
+  endpoint for delivery errors, and Vercel → Logs for the function.)
+- Contant: choose "Contant bij ontvangst" → order appears immediately as
+  **Onbetaald (contant)**.
+
+## Note on dependencies
+`package.json` now also needs `firebase-admin` (already added). Vercel installs
+it automatically on deploy.
+

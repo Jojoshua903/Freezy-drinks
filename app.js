@@ -99,10 +99,10 @@ function renderDrawer(){
       wrap.appendChild(el);
     });
   }
-  const sub = cartSubtotal(), del = deliveryFee();
+  const sub = cartSubtotal();
   if($('#subtotal')) $('#subtotal').textContent = money(sub);
-  if($('#delivery')) $('#delivery').textContent = del===0 ? (sub>0?'Gratis':money(0)) : money(del);
-  if($('#grandTotal')) $('#grandTotal').textContent = money(sub+del);
+  if($('#delivery')) $('#delivery').textContent = 'kies bij afrekenen';
+  if($('#grandTotal')) $('#grandTotal').textContent = money(sub);
   const cb = $('#checkoutBtn'); if(cb) cb.disabled = cart.length===0;
 }
 
@@ -119,6 +119,14 @@ function openCheckout(){
 }
 function closeCheckout(){ $('#checkoutModal').classList.remove('open'); }
 
+const DELIVER_FEE = 3.00; // bezorgkosten
+
+// Checkout state for fulfilment + payment choice.
+const checkoutChoice = { fulfilment: 'pickup', payment: 'online' };
+
+function checkoutDeliveryFee(){ return checkoutChoice.fulfilment === 'deliver' ? DELIVER_FEE : 0; }
+function checkoutTotal(){ return cartSubtotal() + checkoutDeliveryFee(); }
+
 function renderCheckoutForm(){
   const rows = cart.map(i=>`
     <div class="co-row">
@@ -129,28 +137,124 @@ function renderCheckoutForm(){
       </div>
       <span class="co-pay-amt">${money(i.price*i.qty)}</span>
     </div>`).join('');
-  const sub = cartSubtotal();
+
   $('#checkoutInner').innerHTML = `
     <h3>Afrekenen</h3>
-    <p class="sub">Controleer je bestelling en reken veilig af via Stripe. Je vult je bezorggegevens in op het volgende scherm.</p>
+    <p class="sub">Kies hoe je je bestelling wilt ontvangen en betalen.</p>
     <div class="co-list">${rows}</div>
-    <div class="co-total"><span>Totaal</span><span>${money(sub)}</span></div>
+
+    <div class="opt-group">
+      <h4>Ontvangen</h4>
+      <div class="opt-row" id="fulfilRow">
+        <button type="button" class="opt" data-ful="pickup" data-selected="true">🏫 Ophalen op school <span class="add-price">gratis</span></button>
+        <button type="button" class="opt" data-ful="deliver" data-selected="false">🚲 Bezorgen <span class="add-price">+${money(DELIVER_FEE)}</span></button>
+      </div>
+    </div>
+
+    <div class="auth-field" id="addrField" style="display:none">
+      <label>Bezorgadres</label>
+      <input id="coAddress" placeholder="Straat, huisnummer, plaats">
+    </div>
+
+    <div class="opt-group">
+      <h4>Betalen</h4>
+      <div class="opt-row" id="payRow">
+        <button type="button" class="opt" data-pay="online" data-selected="true">💳 Online (iDEAL/kaart)</button>
+        <button type="button" class="opt" data-pay="cash" data-selected="false">💶 Contant bij ontvangst</button>
+      </div>
+    </div>
+
+    <div class="co-total"><span>Totaal</span><span id="coTotal">${money(checkoutTotal())}</span></div>
     <div id="coError" class="note" style="display:none"></div>
-    <button type="button" id="payBtn" class="btn btn-primary" style="width:100%;justify-content:center;display:flex" onclick="startStripeCheckout()">Veilig ${money(sub)} betalen →</button>
+    <button type="button" id="payBtn" class="btn btn-primary" style="width:100%;justify-content:center;display:flex" onclick="placeOrder()">${payBtnLabel()}</button>
     <button type="button" class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;margin-top:10px" onclick="closeCheckout()">Terug</button>`;
+
+  // Fulfilment toggle
+  $('#fulfilRow').querySelectorAll('.opt').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      checkoutChoice.fulfilment = b.dataset.ful;
+      $('#fulfilRow').querySelectorAll('.opt').forEach(x=>x.dataset.selected='false');
+      b.dataset.selected='true';
+      $('#addrField').style.display = checkoutChoice.fulfilment==='deliver' ? 'block' : 'none';
+      refreshCheckoutTotals();
+    });
+  });
+  // Payment toggle
+  $('#payRow').querySelectorAll('.opt').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      checkoutChoice.payment = b.dataset.pay;
+      $('#payRow').querySelectorAll('.opt').forEach(x=>x.dataset.selected='false');
+      b.dataset.selected='true';
+      refreshCheckoutTotals();
+    });
+  });
+}
+
+function payBtnLabel(){
+  return checkoutChoice.payment==='cash'
+    ? `Bestelling plaatsen · ${money(checkoutTotal())}`
+    : `Veilig ${money(checkoutTotal())} betalen →`;
+}
+function refreshCheckoutTotals(){
+  const t = $('#coTotal'); if(t) t.textContent = money(checkoutTotal());
+  const b = $('#payBtn'); if(b) b.textContent = payBtnLabel();
+}
+
+// Single entry point for the checkout button — routes to cash or online.
+async function placeOrder(){
+  if(checkoutChoice.fulfilment==='deliver'){
+    const addr = ($('#coAddress')?.value || '').trim();
+    if(!addr){ showCoError('Vul een bezorgadres in.'); return; }
+  }
+  if(checkoutChoice.payment==='cash') return placeCashOrder();
+  return startStripeCheckout();
+}
+function showCoError(msg){ const e=$('#coError'); if(e){ e.textContent=msg; e.style.display='block'; } }
+
+// Cash: place the order immediately (no Stripe), status "Onbetaald (contant)".
+async function placeCashOrder(){
+  const btn = $('#payBtn'); btn.disabled=true; btn.textContent='Bestelling plaatsen…';
+  try {
+    const fb = await import('./firebase.js');
+    const user = await new Promise(resolve=>{ const u=fb.auth.onAuthStateChanged(x=>{u();resolve(x);}); });
+    if(!user){ showCoError('Log in om een contante bestelling te plaatsen.'); btn.disabled=false; btn.textContent=payBtnLabel(); return; }
+    await fb.createOrder({
+      uid: user.uid, email: user.email,
+      items: cart.map(i=>({ name:i.name, qty:i.qty, price:i.price, optsText:i.optsText||'' })),
+      total: checkoutTotal(),
+      fulfilment: checkoutChoice.fulfilment,
+      address: checkoutChoice.fulfilment==='deliver' ? ($('#coAddress')?.value||'').trim() : '',
+      deliveryFee: checkoutDeliveryFee(),
+      payment: 'contant',
+      paymentStatus: 'Onbetaald (contant)'
+    });
+    cart = []; saveCart(); updateCart(); closeCheckout();
+    toast('Bestelling geplaatst — betaal contant bij ontvangst.');
+  } catch(e){
+    showCoError('Bestelling plaatsen mislukt: ' + e.message);
+    btn.disabled=false; btn.textContent=payBtnLabel();
+  }
 }
 
 async function startStripeCheckout(){
   const btn = $('#payBtn'), err = $('#coError');
   err.style.display='none'; btn.disabled=true; btn.textContent='Veilig afrekenen starten…';
   try {
-    // If the customer is logged in, save the order to Firestore first so it
-    // shows up in their account and the staff dashboard.
-    await saveOrderIfLoggedIn();
-
+    const fb = await import('./firebase.js').catch(()=>null);
+    let uid = '', email = '';
+    if(fb){
+      const user = await new Promise(resolve=>{ const u=fb.auth.onAuthStateChanged(x=>{u();resolve(x);}); });
+      if(user){ uid = user.uid; email = user.email || ''; }
+    }
     const res = await fetch(CHECKOUT_ENDPOINT, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ items: cart.map(i=>({name:i.name, price:i.price, qty:i.qty, optsText:i.optsText})) })
+      body: JSON.stringify({
+        items: cart.map(i=>({name:i.name, price:i.price, qty:i.qty, optsText:i.optsText})),
+        fulfilment: checkoutChoice.fulfilment,
+        address: checkoutChoice.fulfilment==='deliver' ? ($('#coAddress')?.value||'').trim() : '',
+        deliveryFee: checkoutDeliveryFee(),
+        uid, email
+      })
     });
     if(!res.ok){ const d=await res.json().catch(()=>({})); throw new Error(d.error || 'Afrekenen mislukt.'); }
     const data = await res.json();
@@ -159,51 +263,34 @@ async function startStripeCheckout(){
   } catch(e){
     err.textContent = e.message + ' (Staat de backend live en is STRIPE_SECRET_KEY ingesteld?)';
     err.style.display='block';
-    btn.disabled=false; btn.textContent = `Veilig ${money(cartSubtotal())} betalen →`;
-  }
-}
-
-/* Save the current cart as an order in Firestore, if a user is signed in.
-   Uses a dynamic import so the shop pages don't need to load Firebase unless
-   the customer actually checks out. Fails silently if Firebase isn't set up. */
-async function saveOrderIfLoggedIn(){
-  try {
-    const fb = await import('./firebase.js');
-    const user = await new Promise(resolve=>{
-      const unsub = fb.auth.onAuthStateChanged(u=>{ unsub(); resolve(u); });
-    });
-    if(!user) return; // guest checkout — nothing to save to an account
-    await fb.createOrder({
-      uid: user.uid,
-      email: user.email,
-      items: cart.map(i=>({ name:i.name, qty:i.qty, price:i.price, optsText:i.optsText||'' })),
-      total: cartSubtotal()
-    });
-  } catch(e){
-    // Firebase not configured yet, or rules block it — don't block checkout.
-    console.warn('Order niet opgeslagen in account:', e.message);
+    btn.disabled=false; btn.textContent = payBtnLabel();
   }
 }
 
 /* Load the shop menu. Tries Firestore first (so staff control the menu via the
    dashboard); falls back to the PRODUCTS list in products.js if Firestore is
-   empty, unavailable, or blocked (e.g. the in-browser preview). Always resolves
-   with an array, so the shop never looks broken. */
+   empty, unavailable, blocked, or slow. Always resolves with an array within a
+   few seconds, so the shop never hangs or looks broken. */
 async function loadMenuProducts(){
+  const fallback = (typeof PRODUCTS !== 'undefined') ? PRODUCTS : [];
   try {
-    const { db } = await import('./firebase.js');
-    const { collection, getDocs, query, orderBy } =
-      await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-    const snap = await getDocs(query(collection(db,'products'), orderBy('name')));
-    const items = snap.docs.map(d=>({ id:d.id, ...d.data() }));
-    if(items.length > 0){
-      // Give each a category fallback so filters/illustrations keep working.
+    const withTimeout = (p, ms) => Promise.race([
+      p, new Promise((_, rej)=> setTimeout(()=> rej(new Error('timeout')), ms))
+    ]);
+    const items = await withTimeout((async ()=>{
+      const { db } = await import('./firebase.js');
+      const { collection, getDocs, query, orderBy } =
+        await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      const snap = await getDocs(query(collection(db,'products'), orderBy('name')));
+      return snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    })(), 4000);
+    if(items && items.length > 0){
       return items.map(p=>({ cat:'fruity', desc:'', ...p }));
     }
   } catch(e){
     console.warn('Menu uit Firestore niet geladen, val terug op products.js:', e.message);
   }
-  return (typeof PRODUCTS !== 'undefined') ? PRODUCTS : [];
+  return fallback;
 }
 
 /* ---------- Toast ---------- */
@@ -254,6 +341,32 @@ function injectChrome(){
   if(q.get('canceled')==='1') setTimeout(()=>toast('Afrekenen geannuleerd'),400);
 
   updateCart();
+  addStaffNavLink();
+}
+
+/* If a staff member is logged in, add a "Dashboard" link to the nav so they
+   can reach admin.html from any page. Hidden for customers and guests.
+   Uses a dynamic import so shop pages don't hard-depend on Firebase. */
+async function addStaffNavLink(){
+  try {
+    const fb = await import('./firebase.js');
+    fb.auth.onAuthStateChanged(async (user)=>{
+      const nav = document.querySelector('.nav-links');
+      if(!nav) return;
+      const existing = nav.querySelector('a[data-staff-link]');
+      if(!user){ if(existing) existing.remove(); return; }
+      const profile = await fb.getProfile(user.uid);
+      if(profile && profile.isStaff){
+        if(!existing){
+          const a = document.createElement('a');
+          a.href = 'admin.html';
+          a.textContent = 'Dashboard';
+          a.dataset.staffLink = '1';
+          nav.appendChild(a);
+        }
+      } else if(existing){ existing.remove(); }
+    });
+  } catch(e){ /* Firebase niet beschikbaar — geen dashboard-link, geen probleem */ }
 }
 
 document.addEventListener('DOMContentLoaded', injectChrome);

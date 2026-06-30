@@ -64,6 +64,10 @@ if(orders.length===0){
         <span class="when">${fmtDate(o.createdAt)}</span>
       </div>
       <div class="order-items">${(o.items||[]).map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+      <div class="order-tags">
+        <span class="otag">${o.fulfilment==='deliver' ? '🚲 Bezorgen' : '🏫 Ophalen'}</span>
+        <span class="otag ${o.payment==='contant'?'otag-cash':'otag-paid'}">${o.paymentStatus || (o.payment==='contant'?'Onbetaald (contant)':'Betaald')}</span>
+      </div>
       <div class="order-bottom">
         <span class="status-pill status-${(o.status||'Nieuw').split(' ')[0]}">${o.status||'Nieuw'}</span>
         <span class="total">${money(o.total||0)}</span>

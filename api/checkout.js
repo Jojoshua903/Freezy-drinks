@@ -23,18 +23,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { items } = req.body || {};
+    const { items, fulfilment, address, uid, email } = req.body || {};
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Cart is empty.' });
     }
 
     // Build Stripe line items. We send price + name from the cart, but we
-    // re-validate amounts server-side so the client can't send a $0 price.
+    // re-validate amounts server-side so the client can't send a €0 price.
     const line_items = items.map((item) => {
       const name = String(item.name || 'Drink').slice(0, 120);
       const description = item.optsText ? String(item.optsText).slice(0, 200) : undefined;
-      const unitAmount = Math.round(Number(item.price) * 100); // dollars -> cents
+      const unitAmount = Math.round(Number(item.price) * 100); // euros -> cents
       const quantity = Math.max(1, Math.min(99, parseInt(item.qty, 10) || 1));
 
       if (!Number.isFinite(unitAmount) || unitAmount < 50) {
@@ -51,12 +51,40 @@ export default async function handler(req, res) {
       };
     });
 
+    // Add a €3 delivery fee line when the customer chose delivery.
+    const isDelivery = fulfilment === 'deliver';
+    if (isDelivery) {
+      line_items.push({
+        quantity: 1,
+        price_data: {
+          currency: 'eur',
+          unit_amount: 300,
+          product_data: { name: 'Bezorgkosten' },
+        },
+      });
+    }
+
+    // The order is written to Firestore by the webhook AFTER payment succeeds.
+    // We pass everything it needs as metadata (Stripe metadata values are
+    // strings, so the cart is JSON-encoded; kept compact and under limits).
+    const compactItems = items.map(i => ({ n:i.name, q:i.qty, p:i.price, o:i.optsText||'' }));
+    const metadata = {
+      uid: String(uid || ''),
+      email: String(email || ''),
+      fulfilment: isDelivery ? 'deliver' : 'pickup',
+      address: String(address || '').slice(0, 300),
+      deliveryFee: isDelivery ? '3' : '0',
+      items: JSON.stringify(compactItems).slice(0, 4500),
+    };
+
     const siteUrl = getSiteUrl(req);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
       locale: 'nl',
+      metadata,
+      ...(email ? { customer_email: email } : {}),
       // Collect delivery address + let Stripe handle email receipts.
       shipping_address_collection: { allowed_countries: ['NL', 'BE'] },
       phone_number_collection: { enabled: true },

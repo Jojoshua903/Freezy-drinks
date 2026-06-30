@@ -91,17 +91,16 @@ function renderCartPage(){
       </div>
     </div>`).join('');
 
-  const sub = cartSubtotal(), del = deliveryFee();
+  const sub = cartSubtotal();
   wrap.innerHTML = `
     <div class="cart-layout">
       <div class="cart-lines">${lines}</div>
       <div class="summary-box">
         <h3>Besteloverzicht</h3>
         <div class="row"><span>Subtotaal</span><span>${money(sub)}</span></div>
-        <div class="row"><span>Bezorging</span><span>${del===0?'Gratis':money(del)}</span></div>
-        ${sub<FREE_DELIVERY_OVER?`<div class="row" style="color:var(--accent)"><span>Nog ${money(FREE_DELIVERY_OVER-sub)} voor gratis bezorging</span><span></span></div>`:''}
-        <div class="grand"><span>Totaal</span><span>${money(sub+del)}</span></div>
-        <button class="btn btn-primary" style="width:100%;justify-content:center;display:flex" onclick="openCheckout()">Veilig afrekenen →</button>
+        <div class="row" style="color:var(--muted)"><span>Bezorgen of ophalen kies je hierna</span><span></span></div>
+        <div class="grand"><span>Totaal</span><span>${money(sub)}</span></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;display:flex" onclick="openCheckout()">Afrekenen →</button>
         <a href="menu.html" class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;margin-top:10px">Verder winkelen</a>
       </div>
     </div>`;

@@ -83,10 +83,14 @@ function requireAuth({ requireStaff = false } = {}){
 }
 
 /* ---------- Orders ---------- */
-// Save an order. Called after a successful checkout.
-async function createOrder({ uid, email, items, total }){
+// Save an order. Used for CASH orders (online orders are written by the webhook
+// after payment succeeds). Extra fields default sensibly for backwards-compat.
+async function createOrder({ uid, email, items, total, fulfilment='pickup',
+                             address='', deliveryFee=0, payment='online',
+                             paymentStatus='Betaald' }){
   return addDoc(collection(db, 'orders'), {
     uid, email, items, total,
+    fulfilment, address, deliveryFee, payment, paymentStatus,
     status: 'Nieuw',
     createdAt: serverTimestamp()
   });
