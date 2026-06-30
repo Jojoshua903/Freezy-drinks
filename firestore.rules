@@ -1,0 +1,57 @@
+rules_version = '2';
+
+// Firestore Security Rules for Freezy Drinks.
+// Paste these into the Firebase Console → Firestore Database → Rules → Publish.
+//
+// Security model:
+//  - users/{uid}    : a person can read/write only their OWN profile, BUT can
+//                     never make themselves staff. Only existing staff can flip
+//                     the isStaff flag (on anyone).
+//  - products/{id}  : anyone may read (the shop menu). Only staff may write.
+//  - orders/{id}    : a customer can create & read their OWN orders. Staff can
+//                     read all orders and update status.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Is the signed-in user a staff member?
+    function isStaff() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true;
+    }
+    function isSelf(uid) { return request.auth != null && request.auth.uid == uid; }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isStaff();
+
+      // Create your own profile, but you must start as a non-staff customer.
+      allow create: if isSelf(uid)
+        && request.resource.data.isStaff == false;
+
+      // You may update your own profile but NOT grant yourself staff.
+      // Staff may update anyone (this is how roles are assigned).
+      allow update: if isStaff()
+        || (isSelf(uid) && request.resource.data.isStaff == resource.data.isStaff);
+
+      allow delete: if isStaff();
+    }
+
+    match /products/{id} {
+      allow read: if true;            // public menu
+      allow write: if isStaff();      // only staff manage products
+    }
+
+    match /orders/{id} {
+      allow read: if isStaff()
+        || (request.auth != null && resource.data.uid == request.auth.uid);
+
+      // A signed-in customer creates an order tied to their own uid.
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+
+      // Only staff change orders (e.g. status updates).
+      allow update, delete: if isStaff();
+    }
+  }
+}

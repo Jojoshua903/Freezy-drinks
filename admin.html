@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medewerkersdashboard · Freezy Drinks</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="account.html">Mijn account</a>
+    </nav>
+    <button class="cart-btn" id="logoutBtn">Uitloggen</button>
+  </div>
+</header>
+
+<div class="dash">
+  <div class="dash-head">
+    <div><h1>Medewerkersdashboard</h1></div>
+  </div>
+  <p class="dash-sub" id="welcome">Bezig met laden…</p>
+
+  <!-- Orders -->
+  <div class="dash-section">
+    <h2>Bestellingen</h2>
+    <div id="orders"><p style="color:var(--muted)">Bezig met laden…</p></div>
+  </div>
+
+  <!-- Products -->
+  <div class="dash-section">
+    <h2>Producten</h2>
+    <form class="admin-form" id="prodForm">
+      <div class="auth-field"><label>Naam</label><input id="pName" required placeholder="bijv. Mango Tango"></div>
+      <div class="auth-field"><label>Prijs (€)</label><input id="pPrice" type="number" step="0.01" min="0.5" required placeholder="6.50"></div>
+      <div class="auth-field"><label>Categorie</label>
+        <select id="pCat" class="status-select" style="width:100%">
+          <option value="fruity">Fruitig</option>
+          <option value="coffee">Koffie</option>
+          <option value="tea">Thee</option>
+          <option value="wellness">Wellness</option>
+        </select>
+      </div>
+      <div class="auth-field"><label>Label (optioneel)</label><input id="pBadge" placeholder="bijv. Bestseller"></div>
+      <div class="auth-field" style="grid-column:1/-1"><label>Omschrijving</label><input id="pDesc" placeholder="Korte omschrijving"></div>
+      <button type="submit" class="btn btn-primary">Product toevoegen</button>
+    </form>
+    <div id="products"></div>
+  </div>
+
+  <!-- Roles -->
+  <div class="dash-section">
+    <h2>Medewerkers beheren</h2>
+    <form class="role-form" id="roleForm">
+      <div class="auth-field">
+        <label>E-mailadres van gebruiker</label>
+        <input id="roleEmail" type="email" required placeholder="collega@email.nl">
+      </div>
+      <button type="submit" class="btn btn-primary">Maak medewerker</button>
+      <button type="button" class="btn btn-ghost" id="demoteBtn">Verwijder rol</button>
+    </form>
+    <p class="muted-note">De gebruiker moet eerst zelf een account hebben aangemaakt via Inloggen. Daarna kun je hem hier medewerker maken.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import {
+  requireAuth, logout, watchAllOrders, setOrderStatus,
+  watchProducts, addProduct, setStaffByEmail, STATUSES
+} from './firebase.js';
+
+const $ = s => document.querySelector(s);
+const money = n => '€' + Number(n).toFixed(2).replace('.', ',');
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function fmtDate(ts){ return (ts&&ts.toDate)? ts.toDate().toLocaleDateString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : ''; }
+
+const { user, profile } = await requireAuth({ requireStaff:true });
+$('#welcome').textContent = `Ingelogd als ${profile?.name || user.email} (medewerker).`;
+$('#logoutBtn').addEventListener('click', async ()=>{ await logout(); location.href='index.html'; });
+
+/* ---- Live orders ---- */
+watchAllOrders(orders=>{
+  const wrap = $('#orders');
+  if(orders.length===0){ wrap.innerHTML = '<p style="color:var(--muted)">Nog geen bestellingen.</p>'; return; }
+  wrap.innerHTML = orders.map(o=>`
+    <div class="order">
+      <div class="order-top">
+        <span class="oid">#${o.id.slice(0,6).toUpperCase()} · ${o.email||''}</span>
+        <span class="when">${fmtDate(o.createdAt)}</span>
+      </div>
+      <div class="order-items">${(o.items||[]).map(i=>`${i.qty}× ${i.name}`).join(' · ')}</div>
+      <div class="order-bottom">
+        <select class="status-select" data-id="${o.id}">
+          ${STATUSES.map(s=>`<option ${s===(o.status||'Nieuw')?'selected':''}>${s}</option>`).join('')}
+        </select>
+        <span class="total">${money(o.total||0)}</span>
+      </div>
+    </div>`).join('');
+  wrap.querySelectorAll('.status-select').forEach(sel=>{
+    sel.addEventListener('change', async ()=>{
+      try { await setOrderStatus(sel.dataset.id, sel.value); toast('Status bijgewerkt'); }
+      catch(e){ toast('Kon status niet bijwerken'); }
+    });
+  });
+});
+
+/* ---- Products ---- */
+watchProducts(products=>{
+  const wrap = $('#products');
+  wrap.innerHTML = products.length===0
+    ? '<p style="color:var(--muted)">Nog geen producten toegevoegd.</p>'
+    : products.map(p=>`<div class="prod-row"><span><strong>${p.name}</strong> <span style="color:var(--muted)">· ${p.cat||''}</span></span><span class="total">${money(p.price||0)}</span></div>`).join('');
+});
+$('#prodForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  try {
+    const p = {
+      name: $('#pName').value.trim(),
+      price: parseFloat($('#pPrice').value),
+      cat: $('#pCat').value,
+      desc: $('#pDesc').value.trim()
+    };
+    const badge = $('#pBadge').value.trim();
+    if(badge) p.badge = badge;
+    await addProduct(p);
+    e.target.reset(); $('#pCat').value='fruity';
+    toast('Product toegevoegd');
+  } catch(ex){ toast('Toevoegen mislukt'); }
+});
+
+/* ---- Roles ---- */
+$('#roleForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  try { await setStaffByEmail($('#roleEmail').value.trim(), true); toast('Gebruiker is nu medewerker'); $('#roleEmail').value=''; }
+  catch(ex){ toast(ex.message); }
+});
+$('#demoteBtn').addEventListener('click', async ()=>{
+  const email = $('#roleEmail').value.trim();
+  if(!email){ toast('Vul een e-mailadres in'); return; }
+  try { await setStaffByEmail(email, false); toast('Medewerkersrol verwijderd'); $('#roleEmail').value=''; }
+  catch(ex){ toast(ex.message); }
+});
+</script>
+</body>
+</html>

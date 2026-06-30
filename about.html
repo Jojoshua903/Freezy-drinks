@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Over Ons en Contact · Freezy Drinks</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="cart.html">Winkelmandje</a>
+      <a href="about.html">Over ons</a>
+      <a href="account.html">Account</a>
+    </nav>
+    <button class="cart-btn" onclick="openCart()">Winkelmandje <span class="count">0</span></button>
+  </div>
+</header>
+
+<div class="wrap page-head">
+  <h1>Over Freezy Drinks</h1>
+</div>
+
+<section class="section" style="padding-top:24px">
+  <div class="wrap">
+    <div class="prose">
+      <p>Freezy Drinks begon met een simpel idee: elk drankje hoort precies zo gemaakt te worden als jij het wilt. Geen vast menu waar je je bij neer moet leggen, geen siroop uit een fles die al maanden openstaat.</p>
+      <p>We maken elke bestelling met de hand op de dag dat hij de deur uitgaat — vers fruit, echte espresso, koud getrokken thee. Jij kiest een vast recept of ontwerpt je eigen drankje vanaf de basis, en wij maken het en bezorgen het koud bij je thuis.</p>
+      <h2>Hoe bezorging werkt</h2>
+      <p>Lokale bestellingen gaan dezelfde dag de deur uit. Daarbuiten komen je drankjes binnen twee dagen gekoeld en verzegeld aan. Gratis bezorging vanaf €35.</p>
+    </div>
+
+    <div class="contact-grid">
+      <div class="contact-card">
+        <h4>E-mail</h4>
+        <a href="mailto:hello@freezydrinks.example" style="color:var(--accent)">hello@freezydrinks.example</a>
+      </div>
+      <div class="contact-card">
+        <h4>Telefoon</h4>
+        <a href="tel:+31000000000">+31 0 000 0000</a>
+      </div>
+      <div class="contact-card">
+        <h4>Social</h4>
+        <p><a href="#" style="color:var(--accent)">@freezydrinks</a></p>
+      </div>
+      <div class="contact-card">
+        <h4>Bezorggebied</h4>
+        <p>Same-day lokaal · 2 dagen landelijk</p>
+      </div>
+    </div>
+
+    <div style="margin-top:34px">
+      <a href="menu.html" class="btn btn-primary">Begin je bestelling</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+        <p style="margin-top:14px;max-width:34ch;font-size:.92rem">Drankjes op bestelling gemaakt en koud verzonden.</p>
+      </div>
+      <div><h5>Shop</h5><ul>
+        <li><a href="menu.html">Menu</a></li>
+        <li><a href="menu.html#builder">Stel je drankje samen</a></li>
+        <li><a href="cart.html">Winkelmandje</a></li>
+      </ul></div>
+      <div><h5>Contact</h5><ul>
+        <li><a href="mailto:hello@freezydrinks.example">hello@freezydrinks.example</a></li>
+        <li><a href="tel:+31000000000">+31 0 000 0000</a></li>
+      </ul></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year"></span> Freezy Drinks. Alle rechten voorbehouden.</span>
+      <span>Vers gemaakt, koud bezorgd.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="products.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

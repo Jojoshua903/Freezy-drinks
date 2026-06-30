@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu en Samensteller · Freezy Drinks</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="cart.html">Winkelmandje</a>
+      <a href="about.html">Over ons</a>
+      <a href="account.html">Account</a>
+    </nav>
+    <button class="cart-btn" onclick="openCart()">Winkelmandje <span class="count">0</span></button>
+  </div>
+</header>
+
+<div class="wrap page-head">
+  <h1>Het menu</h1>
+  <p>Acht die we vaak maken. Kies er een zoals hij is, of scroll naar beneden en stel iets samen dat hier niet op staat.</p>
+</div>
+
+<section class="section" style="padding-top:24px">
+  <div class="wrap">
+    <div class="filters" id="filters">
+      <button class="chip active" data-cat="all">Alles</button>
+      <button class="chip" data-cat="fruity">Fruitig</button>
+      <button class="chip" data-cat="coffee">Koffie</button>
+      <button class="chip" data-cat="tea">Thee</button>
+      <button class="chip" data-cat="wellness">Wellness</button>
+    </div>
+    <div class="menu-list" id="productGrid"></div>
+  </div>
+</section>
+
+<section class="section" id="builder">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><h2>Stel je eigen drankje samen</h2></div>
+      <p>Ontwerp een drankje vanaf nul. Kies je basis en pas alles aan.</p>
+    </div>
+    <div class="builder">
+      <div class="builder-grid">
+        <div id="builderOptions"></div>
+        <div class="builder-summary">
+          <h4>Jouw eigen drankje</h4>
+          <input class="namefield" id="customName" placeholder="Geef je creatie een naam (optioneel)">
+          <ul id="builderBreakdown"></ul>
+          <div class="total"><span>Totaal</span><span id="builderTotal">€0,00</span></div>
+          <button class="btn btn-primary" onclick="addCustomToCart()">In winkelmandje</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+        <p style="margin-top:14px;max-width:34ch;font-size:.92rem">Drankjes op bestelling gemaakt en koud verzonden.</p>
+      </div>
+      <div><h5>Shop</h5><ul>
+        <li><a href="menu.html">Menu</a></li>
+        <li><a href="menu.html#builder">Stel je drankje samen</a></li>
+        <li><a href="cart.html">Winkelmandje</a></li>
+      </ul></div>
+      <div><h5>Contact</h5><ul>
+        <li><a href="mailto:hello@freezydrinks.example">hello@freezydrinks.example</a></li>
+        <li><a href="about.html">Over ons &amp; contact</a></li>
+      </ul></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year"></span> Freezy Drinks. Alle rechten voorbehouden.</span>
+      <span>Vers gemaakt, koud bezorgd.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="products.js"></script>
+<script src="app.js"></script>
+<script>
+/* ---------- Menu list + filters ---------- */
+let MENU = [];   // loaded from Firestore (or products.js fallback)
+
+function renderProducts(cat='all'){
+  const list = document.getElementById('productGrid');
+  list.innerHTML = '';
+  const items = MENU.filter(p => cat==='all' || p.cat===cat);
+  if(items.length===0){
+    list.innerHTML = '<p style="color:var(--muted);padding:20px 0">Geen drankjes in deze categorie.</p>';
+    return;
+  }
+  items.forEach((p,i)=>{
+    const el = document.createElement('div');
+    el.className = 'menu-row';
+    el.innerHTML = `
+      <div class="idx">${String(i+1).padStart(2,'0')}</div>
+      <div class="ill">${drinkSVG(p.cat, i+1)}</div>
+      <div class="info">
+        <div class="row-top">
+          <h3>${p.name}</h3>
+          ${p.badge?`<span class="tag">${p.badge}</span>`:''}
+        </div>
+        <p class="desc">${p.desc}</p>
+      </div>
+      <div class="right">
+        <span class="price">${money(p.price)}</span>
+        <button class="add">In winkelmandje</button>
+      </div>`;
+    el.querySelector('.add').addEventListener('click',()=>addToCart(p));
+    list.appendChild(el);
+  });
+}
+document.querySelectorAll('#filters .chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('#filters .chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    renderProducts(c.dataset.cat);
+  });
+});
+
+/* ---------- Builder ---------- */
+const builderState = {};
+function renderBuilder(){
+  const wrap = document.getElementById('builderOptions');
+  wrap.innerHTML='';
+  Object.entries(BUILDER).forEach(([key,group])=>{
+    if(group.type==='single'){
+      const def = group.options[0];
+      builderState[key] = group.required ? def.id : (key==='milk'||key==='sweet'? def.id : null);
+    } else builderState[key] = [];
+    const g = document.createElement('div');
+    g.className='opt-group';
+    g.innerHTML = `<h4>${group.title}</h4><div class="opt-row"></div>`;
+    const row = g.querySelector('.opt-row');
+    group.options.forEach(o=>{
+      const b = document.createElement('button');
+      b.className='opt';
+      b.dataset.selected = (group.type==='single' && builderState[key]===o.id) ? 'true':'false';
+      b.innerHTML = `${o.emoji?o.emoji+' ':''}${o.label}${o.price?`<span class="add-price">+${money(o.price)}</span>`:''}`;
+      b.addEventListener('click',()=>{
+        if(group.type==='single'){
+          builderState[key]=o.id;
+          row.querySelectorAll('.opt').forEach(x=>x.dataset.selected='false');
+          b.dataset.selected='true';
+        } else {
+          const arr = builderState[key]; const idx = arr.indexOf(o.id);
+          if(idx>=0){ arr.splice(idx,1); b.dataset.selected='false'; }
+          else { arr.push(o.id); b.dataset.selected='true'; }
+        }
+        updateBuilderSummary();
+      });
+      row.appendChild(b);
+    });
+    wrap.appendChild(g);
+  });
+  updateBuilderSummary();
+}
+function builderPrice(){
+  let total=0; const lines=[];
+  Object.entries(BUILDER).forEach(([key,group])=>{
+    if(group.type==='single'){
+      const sel = group.options.find(o=>o.id===builderState[key]);
+      if(sel){ total+=sel.price; if(sel.price>0||group.required) lines.push({label:`${group.title}: ${sel.label}`, price:sel.price}); }
+    } else builderState[key].forEach(id=>{ const o=group.options.find(x=>x.id===id); if(o){ total+=o.price; lines.push({label:o.label, price:o.price}); } });
+  });
+  return {total, lines};
+}
+function updateBuilderSummary(){
+  const {total, lines} = builderPrice();
+  document.getElementById('builderBreakdown').innerHTML = lines.map(l=>`<li><span>${l.label}</span><span>${l.price>0?'+'+money(l.price):'—'}</span></li>`).join('');
+  document.getElementById('builderTotal').textContent = money(total);
+}
+function builderSignature(){
+  return Object.entries(BUILDER).map(([k])=>Array.isArray(builderState[k])?builderState[k].join(','):builderState[k]).join('|') + '|' + (document.getElementById('customName').value||'');
+}
+function builderOptsText(){
+  const parts=[];
+  Object.entries(BUILDER).forEach(([key,group])=>{
+    if(group.type==='single'){ const sel=group.options.find(o=>o.id===builderState[key]); if(sel && (group.required || sel.id!=='none')) parts.push(sel.label); }
+    else builderState[key].forEach(id=>{const o=group.options.find(x=>x.id===id); if(o) parts.push(o.label);});
+  });
+  return parts.join(' · ');
+}
+function addCustomToCart(){
+  const {total} = builderPrice();
+  const name = (document.getElementById('customName').value||'').trim() || 'Custom drink';
+  addToCart({id:'custom', name, emoji:'🧋', price:total}, {signature:builderSignature(), text:builderOptsText()});
+}
+
+renderBuilder();
+
+// Load menu from Firestore (falls back to products.js), then render.
+const list = document.getElementById('productGrid');
+list.innerHTML = '<p style="color:var(--muted);padding:20px 0">Menu laden…</p>';
+loadMenuProducts().then(items=>{
+  MENU = items;
+  const active = document.querySelector('#filters .chip.active');
+  renderProducts(active ? active.dataset.cat : 'all');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freezy Drinks Op Maat Gemaakt</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="cart.html">Winkelmandje</a>
+      <a href="about.html">Over ons</a>
+      <a href="account.html">Account</a>
+    </nav>
+    <button class="cart-btn" onclick="openCart()">Winkelmandje <span class="count">0</span></button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Per glas gemaakt</span>
+      <h1>Jij zegt hoe. <em>Wij schenken.</em></h1>
+      <p class="lede">Geen siroop uit een fles, geen vooraf gemixte shortcuts. Zeg ons de basis, de zoetheid, wat erin gaat — wij maken het met de hand en sturen het koud op. Of kies er een van ons en laat het denken aan ons over.</p>
+      <div class="hero-cta">
+        <a href="menu.html#builder" class="btn btn-primary">Stel je drankje samen</a>
+        <a href="menu.html" class="btn btn-ghost">Bekijk het menu</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <span class="float-tag t1">Echt fruit<small>Nooit uit concentraat</small></span>
+      <div class="glass"><div class="straw"></div><div class="cup"></div><div class="liquid"></div></div>
+      <span class="float-tag t2">Precies van jou<small>Tot aan het ijs</small></span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head">
+      <div><h2>Uitgelichte drankjes</h2></div>
+      <p>Een voorproefje van het menu. <a href="menu.html" style="color:var(--accent)">Bekijk alles →</a></p>
+    </div>
+    <div class="grid" id="featuredGrid"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head"><div><h2>Hoe het werkt</h2></div></div>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><h3>Zeg wat je wilt</h3><p>Pak er een van ons, of open de samensteller en kies elk onderdeel — basis, melk, zoetheid, de extra's.</p></div>
+      <div class="step"><div class="num">2</div><h3>Wij maken het diezelfde dag</h3><p>Vers gesneden, gezet, gemixt op bestelling. Niets staat voorgemengd op een plank op je te wachten.</p></div>
+      <div class="step"><div class="num">3</div><h3>Het komt koud aan</h3><p>Verzegeld en gekoeld. Same-day als je lokaal bent, twee dagen elders.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+        <p style="margin-top:14px;max-width:34ch;font-size:.92rem">Drankjes op bestelling gemaakt en koud verzonden. Samengesteld rond waar jij zin in hebt.</p>
+      </div>
+      <div>
+        <h5>Shop</h5>
+        <ul>
+          <li><a href="menu.html">Menu</a></li>
+          <li><a href="menu.html#builder">Stel je drankje samen</a></li>
+          <li><a href="cart.html">Winkelmandje</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="mailto:hello@freezydrinks.example">hello@freezydrinks.example</a></li>
+          <li><a href="tel:+31000000000">+31 0 000 0000</a></li>
+          <li><a href="about.html">Over ons &amp; contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year"></span> Freezy Drinks. Alle rechten voorbehouden.</span>
+      <span>Vers gemaakt, koud bezorgd.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="products.js"></script>
+<script src="app.js"></script>
+<script>
+  // Uitgelicht = eerste 4 producten (uit Firestore, anders products.js)
+  const grid = document.getElementById('featuredGrid');
+  grid.innerHTML = '<p style="color:var(--muted)">Laden…</p>';
+  loadMenuProducts().then(items=>{
+    grid.innerHTML = '';
+    items.slice(0,4).forEach((p,i)=>{
+      const el = document.createElement('div');
+      el.className='card';
+      el.innerHTML = `
+        <div class="thumb">${p.badge?`<span class="badge">${p.badge}</span>`:''}${drinkSVG(p.cat, i+1)}</div>
+        <div class="body">
+          <h3>${p.name}</h3>
+          <p class="desc">${p.desc}</p>
+          <div class="meta"><span class="price">${money(p.price)}</span><button class="add">In winkelmandje</button></div>
+        </div>`;
+      el.querySelector('.add').addEventListener('click',()=>addToCart(p));
+      grid.appendChild(el);
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Je Winkelmandje · Freezy Drinks</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="cart.html">Winkelmandje</a>
+      <a href="about.html">Over ons</a>
+      <a href="account.html">Account</a>
+    </nav>
+    <button class="cart-btn" onclick="openCart()">Winkelmandje <span class="count">0</span></button>
+  </div>
+</header>
+
+<div class="wrap page-head">
+  <h1>Je winkelmandje</h1>
+  <p>Controleer je bestelling en reken veilig af. Gratis bezorging vanaf €35.</p>
+</div>
+
+<section class="section" style="padding-top:24px">
+  <div class="wrap">
+    <div id="cartContent"></div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+        <p style="margin-top:14px;max-width:34ch;font-size:.92rem">Drankjes op bestelling gemaakt en koud verzonden.</p>
+      </div>
+      <div><h5>Shop</h5><ul>
+        <li><a href="menu.html">Menu</a></li>
+        <li><a href="menu.html#builder">Stel je drankje samen</a></li>
+        <li><a href="cart.html">Winkelmandje</a></li>
+      </ul></div>
+      <div><h5>Contact</h5><ul>
+        <li><a href="mailto:hello@freezydrinks.example">hello@freezydrinks.example</a></li>
+        <li><a href="about.html">Over ons &amp; contact</a></li>
+      </ul></div>
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year"></span> Freezy Drinks. Alle rechten voorbehouden.</span>
+      <span>Vers gemaakt, koud bezorgd.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="products.js"></script>
+<script src="app.js"></script>
+<script>
+/* Full cart page — re-rendered whenever the cart changes (app.js calls renderCartPage). */
+function renderCartPage(){
+  const wrap = document.getElementById('cartContent');
+  if(!wrap) return;
+  if(cart.length===0){
+    wrap.innerHTML = `
+      <div class="empty-cart">
+        <h2>Je winkelmandje is leeg</h2>
+        <p style="margin-bottom:22px">Voeg een drankje toe of stel er zelf een samen om te beginnen.</p>
+        <a href="menu.html" class="btn btn-primary">Bekijk het menu</a>
+      </div>`;
+    return;
+  }
+  const lines = cart.map(i=>`
+    <div class="cart-line">
+      <div class="ci-emoji">${i.emoji||'🥤'}</div>
+      <div class="ci-info">
+        <h4>${i.name}</h4>
+        ${i.optsText?`<div class="opts" style="color:var(--muted);font-size:.85rem">${i.optsText}</div>`:''}
+        <div class="ci-bottom">
+          <div class="qty">
+            <button data-act="dec" data-id="${i.lineId}">–</button>
+            <span>${i.qty}</span>
+            <button data-act="inc" data-id="${i.lineId}">+</button>
+          </div>
+          <span class="price">${money(i.price*i.qty)}</span>
+        </div>
+        <button class="remove" data-act="rm" data-id="${i.lineId}">Verwijderen</button>
+      </div>
+    </div>`).join('');
+
+  const sub = cartSubtotal(), del = deliveryFee();
+  wrap.innerHTML = `
+    <div class="cart-layout">
+      <div class="cart-lines">${lines}</div>
+      <div class="summary-box">
+        <h3>Besteloverzicht</h3>
+        <div class="row"><span>Subtotaal</span><span>${money(sub)}</span></div>
+        <div class="row"><span>Bezorging</span><span>${del===0?'Gratis':money(del)}</span></div>
+        ${sub<FREE_DELIVERY_OVER?`<div class="row" style="color:var(--accent)"><span>Nog ${money(FREE_DELIVERY_OVER-sub)} voor gratis bezorging</span><span></span></div>`:''}
+        <div class="grand"><span>Totaal</span><span>${money(sub+del)}</span></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;display:flex" onclick="openCheckout()">Veilig afrekenen →</button>
+        <a href="menu.html" class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;margin-top:10px">Verder winkelen</a>
+      </div>
+    </div>`;
+
+  wrap.querySelectorAll('[data-act]').forEach(b=>{
+    const id=b.dataset.id;
+    b.addEventListener('click',()=>{
+      if(b.dataset.act==='inc') changeQty(id,1);
+      else if(b.dataset.act==='dec') changeQty(id,-1);
+      else removeItem(id);
+    });
+  });
+}
+renderCartPage();
+</script>
+</body>
+</html>

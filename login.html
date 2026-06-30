@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inloggen · Freezy Drinks</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap nav">
+    <a href="index.html" class="brand"><span class="dot"></span> Freezy Drinks</a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="cart.html">Winkelmandje</a>
+      <a href="about.html">Over ons</a>
+    </nav>
+    <a class="cart-btn" href="login.html">Inloggen</a>
+  </div>
+</header>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1 id="title">Welkom terug</h1>
+    <p class="sub" id="subtitle">Log in om je bestellingen te bekijken.</p>
+
+    <div class="auth-tabs">
+      <button id="tabLogin" class="active" onclick="setMode('login')">Inloggen</button>
+      <button id="tabReg" onclick="setMode('register')">Registreren</button>
+    </div>
+
+    <div class="auth-err" id="err"></div>
+
+    <form id="form">
+      <div class="auth-field" id="nameField" style="display:none">
+        <label>Naam</label>
+        <input id="name" type="text" autocomplete="name" placeholder="Voornaam">
+      </div>
+      <div class="auth-field">
+        <label>E-mailadres</label>
+        <input id="email" type="email" autocomplete="email" required placeholder="jij@email.nl">
+      </div>
+      <div class="auth-field">
+        <label>Wachtwoord</label>
+        <input id="password" type="password" autocomplete="current-password" required placeholder="Minimaal 6 tekens">
+      </div>
+      <button type="submit" class="btn btn-primary" id="submitBtn">Inloggen</button>
+    </form>
+
+    <div class="auth-divider">of</div>
+    <button type="button" class="google-btn" id="googleBtn">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Inloggen met Google
+    </button>
+
+    <p class="auth-foot" id="footNote">Nog geen account? Kies hierboven “Registreren”.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { register, login, loginWithGoogle, getProfile, auth } from './firebase.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+let mode = 'login';
+const $ = s => document.querySelector(s);
+
+// If already signed in, send them to the right place.
+onAuthStateChanged(auth, async (user)=>{
+  if(user){
+    const p = await getProfile(user.uid);
+    location.href = (p && p.isStaff) ? 'admin.html' : 'account.html';
+  }
+});
+
+window.setMode = function(m){
+  mode = m;
+  const reg = m==='register';
+  $('#tabLogin').classList.toggle('active', !reg);
+  $('#tabReg').classList.toggle('active', reg);
+  $('#nameField').style.display = reg ? 'block' : 'none';
+  $('#title').textContent = reg ? 'Account aanmaken' : 'Welkom terug';
+  $('#subtitle').textContent = reg ? 'Maak een account om je bestellingen te volgen.' : 'Log in om je bestellingen te bekijken.';
+  $('#submitBtn').textContent = reg ? 'Registreren' : 'Inloggen';
+  $('#footNote').textContent = reg ? 'Heb je al een account? Kies hierboven “Inloggen”.' : 'Nog geen account? Kies hierboven “Registreren”.';
+  $('#password').autocomplete = reg ? 'new-password' : 'current-password';
+  $('#err').style.display = 'none';
+};
+
+$('#form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const err = $('#err'); err.style.display='none';
+  const email = $('#email').value.trim();
+  const password = $('#password').value;
+  const name = $('#name').value.trim();
+  const btn = $('#submitBtn'); btn.disabled = true;
+  btn.textContent = mode==='register' ? 'Bezig met registreren…' : 'Bezig met inloggen…';
+  try {
+    let user;
+    if(mode==='register') user = await register(email, password, name);
+    else user = await login(email, password);
+    const p = await getProfile(user.uid);
+    location.href = (p && p.isStaff) ? 'admin.html' : 'account.html';
+  } catch(ex){
+    err.textContent = friendly(ex.code || ex.message);
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = mode==='register' ? 'Registreren' : 'Inloggen';
+  }
+});
+
+$('#googleBtn').addEventListener('click', async ()=>{
+  const err = $('#err'); err.style.display='none';
+  const btn = $('#googleBtn'); btn.disabled = true;
+  try {
+    const user = await loginWithGoogle();
+    const p = await getProfile(user.uid);
+    location.href = (p && p.isStaff) ? 'admin.html' : 'account.html';
+  } catch(ex){
+    err.textContent = friendly(ex.code || ex.message);
+    err.style.display = 'block';
+    btn.disabled = false;
+  }
+});
+
+function friendly(code){
+  const m = {
+    'auth/invalid-email':'Ongeldig e-mailadres.',
+    'auth/missing-password':'Vul een wachtwoord in.',
+    'auth/weak-password':'Wachtwoord moet minstens 6 tekens zijn.',
+    'auth/email-already-in-use':'Er bestaat al een account met dit e-mailadres.',
+    'auth/invalid-credential':'E-mailadres of wachtwoord klopt niet.',
+    'auth/wrong-password':'E-mailadres of wachtwoord klopt niet.',
+    'auth/user-not-found':'Geen account met dit e-mailadres.',
+    'auth/too-many-requests':'Te veel pogingen. Probeer het later opnieuw.',
+    'auth/popup-closed-by-user':'Google-venster gesloten. Probeer het opnieuw.',
+    'auth/popup-blocked':'Pop-up geblokkeerd. Sta pop-ups toe en probeer opnieuw.',
+    'auth/unauthorized-domain':'Dit domein is nog niet toegestaan in Firebase (Authentication → Settings → Authorized domains).'
+  };
+  return m[code] || ('Er ging iets mis. ' + code);
+}
+</script>
+</body>
+</html>
