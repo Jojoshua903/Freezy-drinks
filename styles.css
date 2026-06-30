@@ -58,7 +58,32 @@ header.site{
   background:#15120b;color:var(--accent);font-size:.72rem;font-weight:700;
   min-width:20px;height:20px;border-radius:999px;display:inline-grid;place-items:center;padding:0 5px;
 }
-@media(max-width:720px){.nav-links{display:none}}
+
+/* Hamburger (hidden on desktop) */
+.hamburger{display:none;flex-direction:column;gap:5px;width:42px;height:42px;align-items:center;justify-content:center;background:transparent;border:1px solid var(--line);border-radius:8px;cursor:pointer;margin-left:10px}
+.hamburger span{display:block;width:20px;height:2px;background:var(--ink);transition:.25s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+@media(max-width:720px){
+  .nav{position:relative}
+  .hamburger{display:flex}
+  /* Turn the inline nav into a dropdown panel */
+  .nav-links{
+    position:absolute;top:calc(100% + 10px);left:0;right:0;
+    flex-direction:column;align-items:stretch;gap:0;
+    background:var(--bg-2);border:1px solid var(--line);border-radius:12px;
+    padding:6px;box-shadow:var(--shadow);
+    display:none;z-index:80;
+  }
+  .nav-links.open{display:flex}
+  .nav-links a{padding:13px 14px;border-radius:8px;font-size:1rem;color:var(--ink)}
+  .nav-links a:hover,.nav-links a.active{background:var(--surface);color:var(--accent)}
+  /* Make room: shrink the cart button label a touch */
+  .cart-btn{padding:10px 14px;font-size:.85rem}
+}
+.float-tag small{display:block;color:var(--muted);font-weight:500;font-size:.72rem}
 
 /* ---------- Hero ---------- */
 .hero{padding:72px 0 56px;position:relative;overflow:hidden}
@@ -311,3 +336,23 @@ footer a:hover{color:var(--ink)}
 .role-form{display:flex;gap:10px;flex-wrap:wrap;align-items:end;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;max-width:520px}
 .role-form .auth-field{margin:0;flex:1;min-width:200px}
 .muted-note{color:var(--muted);font-size:.85rem;margin-top:10px}
+
+/* ---------- Mobile refinements ---------- */
+@media(max-width:600px){
+  .wrap{padding:0 16px}
+  .hero{padding:40px 0 36px}
+  .hero-cta{flex-direction:column}
+  .hero-cta .btn{width:100%;text-align:center}
+  .hero-art{max-width:none;margin-top:8px}
+  .section{padding:40px 0}
+  .page-head{padding:32px 0 6px}
+  /* Checkout choice buttons stack full-width so they're easy to tap */
+  #fulfilRow .opt,#payRow .opt{flex:1 1 100%;justify-content:space-between}
+  .menu-row{grid-template-columns:30px 52px 1fr;gap:12px}
+  .menu-row .right{grid-column:2/4;flex-direction:row;justify-content:space-between;align-items:center;width:100%}
+  .dash{padding:28px 16px}
+  .order-top{flex-direction:column;align-items:flex-start;gap:4px}
+  .modal{padding:22px}
+  /* Cart drawer full width on small phones */
+  .drawer{width:100%}
+}

@@ -335,6 +335,8 @@ function injectChrome(){
     if(a.getAttribute('href')===path) a.classList.add('active');
   });
 
+  setupMobileMenu();
+
   // Return-from-Stripe message
   const q = new URLSearchParams(location.search);
   if(q.get('paid')==='1') setTimeout(()=>toast('Betaling ontvangen — bedankt!'),400);
@@ -371,3 +373,27 @@ async function addStaffNavLink(){
 
 document.addEventListener('DOMContentLoaded', injectChrome);
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){closeCart();closeCheckout();} });
+
+/* Inject a hamburger button into every header and toggle the nav on mobile. */
+function setupMobileMenu(){
+  const nav = document.querySelector('header.site .nav');
+  const links = document.querySelector('.nav-links');
+  if(!nav || !links || nav.querySelector('.hamburger')) return;
+
+  const btn = document.createElement('button');
+  btn.className = 'hamburger';
+  btn.setAttribute('aria-label','Menu');
+  btn.innerHTML = '<span></span><span></span><span></span>';
+  // Place the hamburger as the last item in the header row.
+  nav.appendChild(btn);
+
+  btn.addEventListener('click', ()=>{
+    const open = links.classList.toggle('open');
+    btn.classList.toggle('open', open);
+  });
+  // Close the menu after tapping any link (delegation covers links added later,
+  // e.g. the staff "Dashboard" link).
+  links.addEventListener('click', (e)=>{
+    if(e.target.closest('a')){ links.classList.remove('open'); btn.classList.remove('open'); }
+  });
+}
