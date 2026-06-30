@@ -48,6 +48,7 @@
         </select>
       </div>
       <div class="auth-field"><label>Label (optioneel)</label><input id="pBadge" placeholder="bijv. Bestseller"></div>
+      <div class="auth-field" style="grid-column:1/-1"><label>Foto-URL (optioneel)</label><input id="pImage" placeholder="https://... link naar een foto"></div>
       <div class="auth-field" style="grid-column:1/-1"><label>Omschrijving</label><input id="pDesc" placeholder="Korte omschrijving"></div>
       <button type="submit" class="btn btn-primary">Product toevoegen</button>
     </form>
@@ -122,7 +123,7 @@ watchProducts(products=>{
   const wrap = $('#products');
   wrap.innerHTML = products.length===0
     ? '<p style="color:var(--muted)">Nog geen producten toegevoegd.</p>'
-    : products.map(p=>`<div class="prod-row"><span><strong>${p.name}</strong> <span style="color:var(--muted)">· ${p.cat||''}</span></span><span class="total">${money(p.price||0)}</span></div>`).join('');
+    : products.map(p=>`<div class="prod-row"><span style="display:flex;align-items:center;gap:12px">${p.image?`<img src="${p.image}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid var(--line)">`:''}<span><strong>${p.name}</strong> <span style="color:var(--muted)">· ${p.cat||''}</span></span></span><span class="total">${money(p.price||0)}</span></div>`).join('');
 });
 $('#prodForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -135,6 +136,8 @@ $('#prodForm').addEventListener('submit', async (e)=>{
     };
     const badge = $('#pBadge').value.trim();
     if(badge) p.badge = badge;
+    const image = $('#pImage').value.trim();
+    if(image) p.image = image;
     await addProduct(p);
     e.target.reset(); $('#pCat').value='fruity';
     toast('Product toegevoegd');

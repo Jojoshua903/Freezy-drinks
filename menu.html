@@ -25,7 +25,7 @@
 
 <div class="wrap page-head">
   <h1>Het menu</h1>
-  <p>Acht die we vaak maken. Kies er een zoals hij is, of scroll naar beneden en stel iets samen dat hier niet op staat.</p>
+  <p>De drankjes die we maken, vers op bestelling. Kies een categorie en leg in je mandje.</p>
 </div>
 
 <section class="section" style="padding-top:24px">
@@ -41,7 +41,8 @@
   </div>
 </section>
 
-<section class="section" id="builder">
+<!-- BUILD-YOUR-OWN tijdelijk verborgen. Zet 'style="display:none"' weg om hem terug te zetten. -->
+<section class="section" id="builder" style="display:none">
   <div class="wrap">
     <div class="sec-head">
       <div><h2>Stel je eigen drankje samen</h2></div>
@@ -71,7 +72,6 @@
       </div>
       <div><h5>Shop</h5><ul>
         <li><a href="menu.html">Menu</a></li>
-        <li><a href="menu.html#builder">Stel je drankje samen</a></li>
         <li><a href="cart.html">Winkelmandje</a></li>
       </ul></div>
       <div><h5>Contact</h5><ul>
@@ -97,7 +97,10 @@ function renderProducts(cat='all'){
   list.innerHTML = '';
   const items = MENU.filter(p => cat==='all' || p.cat===cat);
   if(items.length===0){
-    list.innerHTML = '<p style="color:var(--muted);padding:20px 0">Geen drankjes in deze categorie.</p>';
+    const msg = MENU.length===0
+      ? 'Nog geen drankjes toegevoegd. Voeg ze toe via het dashboard.'
+      : 'Geen drankjes in deze categorie.';
+    list.innerHTML = `<p style="color:var(--muted);padding:20px 0">${msg}</p>`;
     return;
   }
   items.forEach((p,i)=>{
@@ -105,7 +108,7 @@ function renderProducts(cat='all'){
     el.className = 'menu-row';
     el.innerHTML = `
       <div class="idx">${String(i+1).padStart(2,'0')}</div>
-      <div class="ill">${drinkSVG(p.cat, i+1)}</div>
+      <div class="ill">${p.image ? `<img src="${p.image}" alt="${p.name}" class="ill-img">` : drinkSVG(p.cat, i+1)}</div>
       <div class="info">
         <div class="row-top">
           <h3>${p.name}</h3>

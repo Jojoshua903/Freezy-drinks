@@ -1,18 +1,11 @@
 /* ============================================================
    Freezy Drinks — shared product data
-   Edit drinks, builder options, and pricing here. Used by every page.
-   Prices are re-validated by the backend before charging.
+   The shop reads its menu from Firestore (managed in the staff dashboard).
+   This list is only a fallback if Firestore is empty/unreachable.
+   It is intentionally EMPTY so no sample drinks show — add real products
+   via the dashboard. The build-your-own options below stay in code.
    ============================================================ */
-const PRODUCTS = [
-  {id:'p1', name:'Sunset Citrus Fizz', cat:'fruity', emoji:'🍊', price:6.5, desc:'Verse sinaasappel, bloedgrapefruit en bruiswater op ijs.', badge:'Bestseller'},
-  {id:'p2', name:'Berry Bloom Smoothie', cat:'fruity', emoji:'🫐', price:7.0, desc:'Blauwe bes, aardbei en banaan gemixt met havermelk.'},
-  {id:'p3', name:'Velvet Cold Brew', cat:'coffee', emoji:'☕', price:5.5, desc:'18 uur cold brew met een zijdezachte vanilleroom.', badge:'Bestseller'},
-  {id:'p4', name:'Brown Sugar Latte', cat:'coffee', emoji:'🥛', price:6.0, desc:'Espresso, gestoomde melk en huisgemaakte bruine-suikersiroop.'},
-  {id:'p5', name:'Jasmine Cloud Tea', cat:'tea', emoji:'🍵', price:5.0, desc:'Koud getrokken jasmijn-groene thee met een zacht melkkapje.'},
-  {id:'p6', name:'Peach Oolong', cat:'tea', emoji:'🍑', price:5.5, desc:'Geroosterde oolong geshaket met verse perzikpuree.'},
-  {id:'p7', name:'Green Glow Tonic', cat:'wellness', emoji:'🥒', price:7.5, desc:'Komkommer, groene appel, bleekselderij, limoen en munt.'},
-  {id:'p8', name:'Golden Turmeric Shot', cat:'wellness', emoji:'🧡', price:4.0, desc:'Kurkuma, gember, citroen en een vleugje zwarte peper.'}
-];
+const PRODUCTS = [];
 
 const BUILDER = {
   base:   {title:'Basis', type:'single', required:true, options:[
