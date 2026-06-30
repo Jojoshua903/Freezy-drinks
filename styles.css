@@ -27,10 +27,11 @@ body{
   color:var(--ink);
   background:
     radial-gradient(1100px 600px at 82% -12%, rgba(198,255,58,.05), transparent 60%),
-    linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.012) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,.16) 1.6px, transparent 1.8px),
     var(--bg);
-  background-size:auto, 28px 28px, 28px 28px, auto;
+  background-size:auto, 24px 24px, auto;
+  background-position:center, center, center;
+  background-attachment:fixed, fixed, fixed;
   line-height:1.6;
   -webkit-font-smoothing:antialiased;
   padding-bottom:60px;
