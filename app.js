@@ -285,7 +285,7 @@ async function loadMenuProducts(){
       return snap.docs.map(d=>({ id:d.id, ...d.data() }));
     })(), 4000);
     if(items && items.length > 0){
-      return items.map(p=>({ cat:'fruity', desc:'', ...p }));
+      return items.map(p=>({ cat:'basic', desc:'', ...p }));
     }
   } catch(e){
     console.warn('Menu uit Firestore niet geladen, val terug op products.js:', e.message);

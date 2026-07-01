@@ -32,10 +32,9 @@
   <div class="wrap">
     <div class="filters" id="filters">
       <button class="chip active" data-cat="all">Alles</button>
-      <button class="chip" data-cat="fruity">Fruitig</button>
-      <button class="chip" data-cat="coffee">Koffie</button>
-      <button class="chip" data-cat="tea">Thee</button>
-      <button class="chip" data-cat="wellness">Wellness</button>
+      <button class="chip" data-cat="basic">Basic</button>
+      <button class="chip" data-cat="pro">Pro</button>
+      <button class="chip" data-cat="seasonal">Seasonal</button>
     </div>
     <div class="menu-list" id="productGrid"></div>
   </div>
@@ -212,5 +211,6 @@ loadMenuProducts().then(items=>{
   renderProducts(active ? active.dataset.cat : 'all');
 });
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

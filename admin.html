@@ -41,10 +41,9 @@
       <div class="auth-field"><label>Prijs (€)</label><input id="pPrice" type="number" step="0.01" min="0.5" required placeholder="6.50"></div>
       <div class="auth-field"><label>Categorie</label>
         <select id="pCat" class="status-select" style="width:100%">
-          <option value="fruity">Fruitig</option>
-          <option value="coffee">Koffie</option>
-          <option value="tea">Thee</option>
-          <option value="wellness">Wellness</option>
+          <option value="basic">Basic</option>
+          <option value="pro">Pro</option>
+          <option value="seasonal">Seasonal</option>
         </select>
       </div>
       <div class="auth-field"><label>Label (optioneel)</label><input id="pBadge" placeholder="bijv. Bestseller"></div>
@@ -139,7 +138,7 @@ $('#prodForm').addEventListener('submit', async (e)=>{
     const image = $('#pImage').value.trim();
     if(image) p.image = image;
     await addProduct(p);
-    e.target.reset(); $('#pCat').value='fruity';
+    e.target.reset(); $('#pCat').value='basic';
     toast('Product toegevoegd');
   } catch(ex){ toast('Toevoegen mislukt'); }
 });
@@ -157,5 +156,6 @@ $('#demoteBtn').addEventListener('click', async ()=>{
   catch(ex){ toast(ex.message); }
 });
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

@@ -1,11 +1,19 @@
 /* ============================================================
    Freezy Drinks — shared product data
    The shop reads its menu from Firestore (managed in the staff dashboard).
-   This list is only a fallback if Firestore is empty/unreachable.
-   It is intentionally EMPTY so no sample drinks show — add real products
-   via the dashboard. The build-your-own options below stay in code.
+   This list is the fallback shown when Firestore is empty/unreachable.
+   Add a photo per drink via the dashboard (foto-URL), or add an `image`
+   field here. The build-your-own options below stay in code.
    ============================================================ */
-const PRODUCTS = [];
+const PRODUCTS = [
+  {id:'p1', name:'Orange Punch', cat:'basic', price:1.5, desc:'Sinaasappel', badge:'Basic', image:''},
+  {id:'p2', name:"Red N' Fresh", cat:'pro', price:2.0, desc:'Rode vruchten', badge:'Pro', image:''},
+  {id:'p3', name:'Aqua Berry', cat:'pro', price:2.0, desc:'Bessen', badge:'Pro', image:''},
+  {id:'p4', name:'Sour Shock', cat:'pro', price:2.0, desc:'Citrus maar ietsje zuurder', badge:'Pro', image:''},
+  {id:'p5', name:'Arctic Apple', cat:'pro', price:2.0, desc:'Appel', badge:'Pro', image:''},
+  {id:'p6', name:'Lemon Lime', cat:'basic', price:1.5, desc:'Citrusvruchten en mint', badge:'Basic', image:''},
+  {id:'p7', name:'Winter Whirl', cat:'seasonal', price:2.0, desc:'Wintersmaak', badge:'Seasonal (WINTER)', image:''}
+];
 
 const BUILDER = {
   base:   {title:'Basis', type:'single', required:true, options:[
